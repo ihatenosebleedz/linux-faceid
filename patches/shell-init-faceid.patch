@@ -1,0 +1,12 @@
+diff --git a/shell.qml b/shell.qml
+--- a/shell.qml
++++ b/shell.qml
+@@ -293,6 +293,7 @@
+                 _ = WallpaperCommandService; // Force init (IPC wallpaper.set subscriber)
+                 _ = PresetCommandService;    // Force init (IPC preset.load subscriber)
++                _ = FaceIdService;           // Force init (face ID daemon + auth notch hooks)
+                 // PresetsService.initialize() is normally triggered lazily
+                 // when the user opens the Presets tab; the CLI preset
+                 // command needs the list available at boot, so kick it off
+                 // here too.
+                 PresetsService.initialize();

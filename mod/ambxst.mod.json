@@ -1,0 +1,54 @@
+{
+  "$schema": "../../../docs/mods/manifest.schema.json",
+  "manifestVersion": 1,
+  "id": "community.linux-faceid",
+  "name": "Linux Face ID",
+  "version": "0.1.0",
+  "description": "Local face recognition: live detection/recognition state, similarity score, enrollment and verification, powered by OpenCV YuNet + SFace through a private Unix-socket backend. Reads the webcam only while the panel is watching; no network.",
+  "license": "MIT",
+  "author": "nbz",
+  "compatibility": {
+    "api": 1,
+    "ambxst": ">=1.3.4 <1.4.0",
+    "testedBaseCommits": [
+      "d6a3b7207bdc9591d545ee6cac785446279a5a72"
+    ]
+  },
+  "permissions": [
+    "Access to the local V4L2 webcam (/dev/video0), only while watching or enrolling",
+    "Reads and writes the face profile in ~/.local/share/linux-faceid",
+    "Runs a local Python backend (python3); never sends data over the network"
+  ],
+  "commands": [
+    "python3"
+  ],
+  "operations": [
+    {
+      "type": "overlay",
+      "source": "payload/modules/services/FaceIdService.qml",
+      "target": "modules/services/FaceIdService.qml"
+    },
+    {
+      "type": "overlay",
+      "source": "payload/modules/widgets/dashboard/controls/FaceIdPanel.qml",
+      "target": "modules/widgets/dashboard/controls/FaceIdPanel.qml"
+    },
+    {
+      "type": "overlay",
+      "source": "payload/scripts/faceid-daemon.py",
+      "target": "scripts/faceid-daemon.py"
+    },
+    {
+      "type": "patch",
+      "source": "patches/settings-tab-faceid.patch"
+    },
+    {
+      "type": "patch",
+      "source": "patches/shell-init-faceid.patch"
+    },
+    {
+      "type": "patch",
+      "source": "patches/lockscreen-faceid.patch"
+    }
+  ]
+}

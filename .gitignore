@@ -1,0 +1,21 @@
+# Face embeddings and personal data
+*.npy
+face.npy
+*.sock
+
+# C / PAM build artifacts
+*.o
+*.so
+pam/pam_faceid.so
+pam/t_pam_faceid
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Ambxst generation backups
+*.bak
+*.bak.*

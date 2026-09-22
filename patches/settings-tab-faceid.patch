@@ -1,0 +1,37 @@
+diff --git a/modules/widgets/dashboard/controls/SettingsTab.qml b/b/modules/widgets/dashboard/controls/SettingsTab.qml
+index df78932..ed1b78d 100644
+--- a/modules/widgets/dashboard/controls/SettingsTab.qml
++++ b/modules/widgets/dashboard/controls/SettingsTab.qml
+@@ -16,7 +16,7 @@ Rectangle {
+     color: "transparent"
+     implicitWidth: 400
+     implicitHeight: 300
+-    // 0: Network, 1: Bluetooth, 2: Mixer, 3: AI, 4: Effects, 5: Theme, 6: Binds, 7: System, 8: Compositor, 9: Shell
++    // 0: Network, 1: Bluetooth, 2: Mixer, 3: AI, 4: Effects, 5: Theme, 6: Binds, 7: System, 8: Compositor, 9: Shell, 10: Mods, 11: Face ID
+ 
+     property int currentSection: 0
+     property int selectedIndex: GlobalStates.settingsCurrentTab
+@@ -266,6 +266,12 @@ Rectangle {
+             label: "Ambxst",
+             section: 9,
+             isIcon: false
++        },
++        {
++            icon: Icons.shieldCheck,
++            label: "Face ID",
++            section: 11,
++            isIcon: true
+         }
+     ]
+ 
+@@ -606,6 +612,10 @@ Rectangle {
+                 {
+                     component: "ModsPanel.qml",
+                     section: 10
++                },
++                {
++                    component: "FaceIdPanel.qml",
++                    section: 11
+                 }
+             ]
+ 

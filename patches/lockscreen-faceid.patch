@@ -1,0 +1,154 @@
+diff --git a/config/Config.qml b/config/Config.qml
+index bd479391..5d74b1c5 100644
+--- a/config/Config.qml
++++ b/config/Config.qml
+@@ -924,6 +924,7 @@ Singleton {
+ 
+         adapter: JsonAdapter {
+             property string position: "bottom"
++            property bool faceId: true
+         }
+     }
+ 
+diff --git a/config/defaults/lockscreen.js b/config/defaults/lockscreen.js
+index b06cbea9..04ee3fad 100644
+--- a/config/defaults/lockscreen.js
++++ b/config/defaults/lockscreen.js
+@@ -1,5 +1,6 @@
+ .pragma library
+ 
+ var data = {
+-    "position": "bottom"
++    "position": "bottom",
++    "faceId": true
+ }
+diff --git a/modules/lockscreen/LockScreen.qml b/modules/lockscreen/LockScreen.qml
+index 7ece5e5d..e4d52d1b 100644
+--- a/modules/lockscreen/LockScreen.qml
++++ b/modules/lockscreen/LockScreen.qml
+@@ -12,6 +12,7 @@ import qs.modules.corners
+ import qs.modules.theme
+ import qs.modules.globals
+ import qs.modules.widgets.dashboard.widgets
++import qs.modules.services
+ import qs.config
+ 
+ // Lock surface UI - shown on each screen when locked
+@@ -22,6 +23,38 @@ WlSessionLockSurface {
+     property bool authenticating: false
+     property string errorMessage: ""
+     property int failLockSecondsLeft: 0
++    property bool faceIdArmed: false
++
++    // ---- Face ID unlock (community.linux-faceid) ----
++    // A button next to the password field requests a one-shot face scan; a
++    // match unlocks exactly like a correct password. No match leaves the
++    // password box ready. Locking via loginctl never touches
++    // GlobalStates.lockscreenVisible, so no re-arm-on-lock logic is used here:
++    // the button just clears stale state and fires a fresh auth each click.
++    function triggerFaceScan() {
++        if (!Config.lockscreen.faceId) return;
++        if (!FaceIdService.enrolled) return;
++        if (FaceIdService.authStatus === "pending") return;
++        FaceIdService.authStatus = "idle";
++        root.faceIdArmed = true;
++        FaceIdService.auth();
++    }
++
++    Connections {
++        target: FaceIdService
++        function onAuthStatusChanged() {
++            if (FaceIdService.authStatus === "success" && root.faceIdArmed) {
++                root.faceIdArmed = false;
++                authPasswordHolder.password = "";
++                startAnim = false;
++                unlockTimer.start();
++                errorMessage = "";
++                authenticating = false;
++            } else if (FaceIdService.authStatus === "failed") {
++                root.faceIdArmed = false;
++            }
++        }
++    }
+ 
+     // Always transparent - blur background handles the visuals
+     color: "transparent"
+@@ -707,6 +740,78 @@ Timer {
+     }
+ 
+     // Screen corners
++    // Face ID status pill + button (sits right above/below the password box)
++    StyledRect {
++        id: faceIdStatusPill
++        z: 11
++        variant: "bg"
++        width: faceIdStatusContent.implicitWidth + 32
++        height: 44
++        visible: Config.lockscreen.faceId && FaceIdService.enrolled
++        opacity: startAnim ? 1 : 0
++
++        anchors.horizontalCenter: passwordContainer.horizontalCenter
++        anchors.verticalCenter: passwordContainer.isTopPosition ? passwordContainer.bottom : passwordContainer.top
++        anchors.verticalCenterOffset: passwordContainer.isTopPosition ? 72 : -72
++
++        Behavior on opacity {
++            enabled: Config.animDuration > 0
++            NumberAnimation { duration: Config.animDuration / 2 }
++        }
++
++        Row {
++            id: faceIdStatusContent
++            anchors.centerIn: parent
++            spacing: 10
++
++            Text {
++                id: faceIdStatusIcon
++                text: FaceIdService.authStatus === "pending" ? Icons.circleNotch : Icons.user
++                font.family: Icons.font
++                font.pixelSize: 22
++                color: passwordFieldBg.item
++                rotation: 0
++                anchors.verticalCenter: parent.verticalCenter
++
++                Timer {
++                    id: faceIdSpinnerTimer
++                    interval: 100
++                    repeat: true
++                    running: FaceIdService.authStatus === "pending"
++                    onTriggered: {
++                        faceIdStatusIcon.rotation = (faceIdStatusIcon.rotation + 45) % 360;
++                    }
++                }
++
++                onTextChanged: {
++                    if (faceIdStatusIcon.text !== Icons.circleNotch) {
++                        faceIdStatusIcon.rotation = 0;
++                    }
++                }
++            }
++
++            Text {
++                id: faceIdStatusText
++                anchors.verticalCenter: parent.verticalCenter
++                font.family: Config.theme.font
++                font.pixelSize: Styling.fontSize(-2)
++                color: passwordFieldBg.item
++                horizontalAlignment: Text.AlignHCenter
++                text: {
++                    if (FaceIdService.authStatus === "pending") return "Scanning…";
++                    if (FaceIdService.authStatus === "failed") return "No match — try again";
++                    return "Unlock with Face ID";
++                }
++            }
++        }
++
++        MouseArea {
++            anchors.fill: parent
++            cursorShape: Qt.PointingHandCursor
++            onClicked: root.triggerFaceScan()
++        }
++    }
++
+     RoundCorner {
+         id: topLeft
+         size: Styling.radius(4)
